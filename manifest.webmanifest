@@ -1,9 +1,12 @@
 {
-  "name": "Bakul Sayur - Manajemen Pengeluaran",
+  "name": "Bakul Sayur — Expense Intelligence",
   "short_name": "Bakul Sayur",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#f4f7fb",
   "theme_color": "#38bdf8",
-  "lang": "id-ID"
+  "description": "Dashboard pengeluaran Bakul Sayur terhubung Supabase",
+  "icons": [
+    {"src":"./assets/favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}
+  ]
 }
