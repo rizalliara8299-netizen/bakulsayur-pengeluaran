@@ -15,13 +15,12 @@
   <section id="login-view" class="login-view">
     <div class="login-card">
       <div class="brand-lockup"><div class="brand-mark">BS</div><div><strong>Bakul Sayur</strong><span>Expense Intelligence</span></div></div>
-      <div class="login-copy"><span class="eyebrow">SECURE ACCESS</span><h1>Selamat datang kembali.</h1><p>Masuk dengan akun Supabase Anda untuk mengelola pengeluaran secara realtime.</p></div>
+      <div class="login-copy"><span class="eyebrow">SECURE PIN ACCESS</span><h1>Selamat datang kembali.</h1><p>Masukkan PIN akses untuk membuka dashboard pengeluaran Bakul Sayur.</p></div>
       <form id="login-form" class="login-form">
-        <label>Email<input id="login-email" type="email" autocomplete="email" required placeholder="nama@email.com" /></label>
-        <label>Password<input id="login-password" type="password" autocomplete="current-password" required placeholder="••••••••" /></label>
+        <label>PIN Akses<input id="login-pin" type="password" inputmode="numeric" autocomplete="off" pattern="[0-9]{5}" maxlength="5" required placeholder="•••••" autofocus /></label>
         <button id="login-btn" class="btn btn-primary" type="submit">Masuk ke Dashboard</button>
       </form>
-      <p class="micro">Data aplikasi tersimpan di Supabase dan dilindungi Row Level Security.</p>
+      <p class="micro">PIN diverifikasi di server Supabase. Setelah 5 percobaan salah, akses dikunci sementara.</p>
     </div>
     <div class="login-art"><div class="orb one"></div><div class="orb two"></div><div class="glass-card"><span>LIVE FINANCE</span><strong id="login-preview-total">Rp 22,7 jt</strong><p>Data pengeluaran terpusat, rapi, dan siap dipantau dari desktop maupun ponsel.</p></div></div>
   </section>
@@ -37,14 +36,14 @@
         <button class="nav-item" data-page="master"><span class="nav-ico">◇</span><span>Master Data</span></button>
       </nav>
       <div class="sidebar-spacer"></div>
-      <div class="sidebar-user"><div class="avatar">AD</div><div><strong id="sidebar-user-email">Admin</strong><span>Supabase Owner</span></div></div>
+      <div class="sidebar-user"><div class="avatar">AD</div><div><strong id="sidebar-user-email">Administrator</strong><span>PIN Access</span></div></div>
       <button id="logout-btn" class="logout-btn">Keluar</button>
     </aside>
 
     <main class="main">
       <header class="topbar">
         <div><span class="eyebrow light">BAKUL SAYUR CONTROL CENTER</span><h1 id="page-title">Ringkasan Pengeluaran</h1><p id="page-subtitle">Pantau arus pengeluaran dan pola belanja dalam satu tampilan.</p></div>
-        <div class="topbar-actions"><div class="status-pill"><i></i><span>Supabase Online</span></div><div class="profile-chip"><div><strong>Admin Panel</strong><span id="profile-email">Bakul Sayur</span></div><div class="avatar light-avatar">AD</div></div></div>
+        <div class="topbar-actions"><div class="status-pill"><i></i><span>Supabase Online</span></div><div class="profile-chip"><div><strong>Admin Panel</strong><span id="profile-email">Akses PIN</span></div><div class="avatar light-avatar">AD</div></div></div>
       </header>
 
       <div class="content">
