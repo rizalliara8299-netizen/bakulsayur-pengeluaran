@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#38bdf8" />
   <meta name="description" content="Bakul Sayur — dashboard pengeluaran fullstack Supabase" />
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+  <link rel="shortcut icon" href="./assets/favicon.svg" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./polish.css" />
   <title>Bakul Sayur — Manajemen Pengeluaran</title>
 </head>
 <body>
@@ -14,7 +17,7 @@
 
   <section id="login-view" class="login-view">
     <div class="login-card">
-      <div class="brand-lockup"><div class="brand-mark">BS</div><div><strong>Bakul Sayur</strong><span>Expense Intelligence</span></div></div>
+      <div class="login-logo-wrap"><img class="brand-wordmark" src="./assets/bakul-sayur-logo.svg" alt="Bakul Sayur" /></div>
       <div class="login-copy"><span class="eyebrow">SECURE PIN ACCESS</span><h1>Selamat datang kembali.</h1><p>Masukkan PIN akses untuk membuka dashboard pengeluaran Bakul Sayur.</p></div>
       <form id="login-form" class="login-form">
         <label>PIN Akses<input id="login-pin" type="password" inputmode="numeric" autocomplete="off" pattern="[0-9]{5}" maxlength="5" required placeholder="•••••" autofocus /></label>
@@ -27,7 +30,7 @@
 
   <div id="app" class="app-shell hidden">
     <aside class="sidebar">
-      <div class="brand-lockup sidebar-brand"><div class="brand-mark">BS</div><div><strong>Bakul Sayur</strong><span>Expense Intelligence</span></div></div>
+      <div class="brand-lockup sidebar-brand"><img class="sidebar-logo-mark" src="./assets/bakul-sayur-mark.svg" alt="Logo Bakul Sayur" /><div><strong>Bakul Sayur</strong><span>Expense Intelligence</span></div></div>
       <div class="nav-label">MENU UTAMA</div>
       <nav class="nav-menu">
         <button class="nav-item active" data-page="dashboard"><span class="nav-ico">▦</span><span>Dashboard</span></button>
@@ -42,7 +45,7 @@
 
     <main class="main">
       <header class="topbar">
-        <div><span class="eyebrow light">BAKUL SAYUR CONTROL CENTER</span><h1 id="page-title">Ringkasan Pengeluaran</h1><p id="page-subtitle">Pantau arus pengeluaran dan pola belanja dalam satu tampilan.</p></div>
+        <div class="topbar-copy"><div class="mobile-brand-row"><img src="./assets/bakul-sayur-mark.svg" alt="" /><span>Bakul Sayur</span></div><span class="eyebrow light">BAKUL SAYUR CONTROL CENTER</span><h1 id="page-title">Ringkasan Pengeluaran</h1><p id="page-subtitle">Pantau arus pengeluaran dan pola belanja dalam satu tampilan.</p></div>
         <div class="topbar-actions"><div class="status-pill"><i></i><span>Supabase Online</span></div><div class="profile-chip"><div><strong>Admin Panel</strong><span id="profile-email">Akses PIN</span></div><div class="avatar light-avatar">AD</div></div></div>
       </header>
 
