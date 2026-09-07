@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#38bdf8" />
   <meta name="description" content="Bakul Sayur — dashboard pengeluaran fullstack Supabase" />
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
-  <link rel="shortcut icon" href="./assets/favicon.svg" />
+  <link rel="shortcut icon" type="image/svg+xml" href="./assets/favicon.svg" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./polish.css" />
@@ -58,6 +58,20 @@
             <article class="panel payment-panel"><div class="panel-head"><div><span class="mini-label">PAYMENT MIX</span><h3>Metode Transaksi</h3></div></div><div id="payment-breakdown" class="payment-list"></div></article>
           </div>
           <article class="panel"><div class="panel-head"><div><span class="mini-label">TOP SPENDING</span><h3>10 Item Belanja Tertinggi</h3></div><span class="panel-note">Berdasarkan nominal pengeluaran</span></div><div id="top-items" class="rank-list"></div></article>
+
+          <article class="panel monthly-analysis-panel">
+            <div class="panel-head monthly-analysis-head">
+              <div><span class="mini-label">MONTHLY INTELLIGENCE</span><h3>Analisis Bulanan Otomatis</h3><p>Sistem membaca pola pengeluaran, item, kategori, metode pembayaran, dan pergerakan dibanding bulan sebelumnya.</p></div>
+              <div class="monthly-actions"><input id="analysis-month" class="control" type="month" aria-label="Bulan analisis"/><button id="download-monthly-analysis" class="btn btn-dark" type="button">↓ Download Excel Bulanan</button></div>
+            </div>
+            <div class="monthly-analysis-content">
+              <div id="monthly-summary-cards" class="analysis-kpi-grid"></div>
+              <div class="analysis-detail-grid">
+                <section class="analysis-box"><div class="analysis-box-head"><span class="mini-label">AUTO INSIGHT</span><h4>Insight Otomatis</h4></div><div id="monthly-insights" class="insight-list"></div></section>
+                <section class="analysis-box"><div class="analysis-box-head"><span class="mini-label">MONTH RANKING</span><h4>Ranking Bulan Terpilih</h4></div><div id="monthly-ranking" class="month-ranking"></div></section>
+              </div>
+            </div>
+          </article>
         </section>
 
         <section id="page-input" class="page">
@@ -74,7 +88,7 @@
         </section>
 
         <section id="page-history" class="page">
-          <div class="section-toolbar"><div><h2>Riwayat Belanja</h2><p>Telusuri transaksi tersimpan dengan filter cepat.</p></div><button id="export-csv" class="btn btn-dark">↓ Export CSV</button></div>
+          <div class="section-toolbar history-toolbar"><div><h2>Riwayat Belanja</h2><p>Telusuri transaksi tersimpan dengan filter cepat atau unduh laporan lengkap per bulan.</p></div><div class="history-report-actions"><input id="history-report-month" class="control" type="month" aria-label="Bulan laporan"/><button id="download-monthly-history" class="btn btn-dark" type="button">↓ Download Excel Bulanan</button><button id="export-csv" class="btn btn-ghost" type="button">Export Halaman CSV</button></div></div>
           <article class="panel"><div class="filter-grid"><input id="history-search" class="control" type="search" placeholder="Cari item atau ID..."/><select id="history-category" class="control"></select><input id="history-date" class="control" type="date"/><button id="history-reset" class="btn btn-ghost">Reset</button></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Tanggal</th><th>Item</th><th>Kategori</th><th>Qty</th><th>Pembayaran</th><th class="right">Total</th></tr></thead><tbody id="history-body"></tbody></table></div><div class="pagination"><button id="history-prev" class="btn btn-ghost">← Sebelumnya</button><span id="history-page-info">Halaman 1</span><button id="history-next" class="btn btn-ghost">Berikutnya →</button></div></article>
         </section>
 
