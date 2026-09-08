@@ -84,3 +84,10 @@
   $('#download-monthly-history')?.addEventListener('click',e=>downloadMonthlyReport($('#history-report-month').value,e.currentTarget));
   if(state.dashboard)renderMonthlyAnalysis(state.dashboard);
 })();
+
+(function(){
+  const s=document.createElement('script');
+  s.src='./history-summary.js';
+  s.defer=true;
+  document.body.appendChild(s);
+})();
