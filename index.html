@@ -3,10 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#38bdf8" />
+  <meta name="theme-color" content="#047448" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="description" content="Bakul Sayur — dashboard pengeluaran fullstack Supabase" />
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
   <link rel="shortcut icon" type="image/svg+xml" href="./assets/favicon.svg" />
+  <link rel="apple-touch-icon" href="./assets/app-icon.svg" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./polish.css" />
@@ -21,7 +24,7 @@
       <div class="login-logo-wrap"><img class="brand-wordmark" src="./assets/bakul-sayur-logo.svg" alt="Bakul Sayur" /></div>
       <div class="login-copy"><span class="eyebrow">SECURE PIN ACCESS</span><h1>Selamat datang kembali.</h1><p>Masukkan PIN akses untuk membuka dashboard pengeluaran Bakul Sayur.</p></div>
       <form id="login-form" class="login-form">
-        <label>PIN Akses<input id="login-pin" type="password" inputmode="numeric" autocomplete="off" pattern="[0-9]{5}" maxlength="5" required placeholder="•••••" autofocus /></label>
+        <label>PIN Akses<input id="login-pin" type="password" inputmode="numeric" autocomplete="off" pattern="[0-9]{4,10}" minlength="4" maxlength="10" required placeholder="••••" autofocus /></label>
         <button id="login-btn" class="btn btn-primary" type="submit">Masuk ke Dashboard</button>
       </form>
       <p class="micro">PIN diverifikasi di server Supabase. Setelah 5 percobaan salah, akses dikunci sementara.</p>
@@ -47,7 +50,7 @@
     <main class="main">
       <header class="topbar">
         <div class="topbar-copy"><div class="mobile-brand-row"><img src="./assets/bakul-sayur-mark.svg" alt="" /><span>Bakul Sayur</span></div><span class="eyebrow light">BAKUL SAYUR CONTROL CENTER</span><h1 id="page-title">Ringkasan Pengeluaran</h1><p id="page-subtitle">Pantau arus pengeluaran dan pola belanja dalam satu tampilan.</p></div>
-        <div class="topbar-actions"><div class="status-pill"><i></i><span>Supabase Online</span></div><div class="profile-chip"><div><strong>Admin Panel</strong><span id="profile-email">Akses PIN</span></div><div class="avatar light-avatar">AD</div></div></div>
+        <div class="topbar-actions"><div class="status-pill" id="connection-status"><i></i><span>Memeriksa koneksi…</span></div><div class="profile-chip"><div><strong>Admin Panel</strong><span id="profile-email">Akses PIN</span></div><div class="avatar light-avatar">AD</div></div></div>
       </header>
 
       <div class="content">

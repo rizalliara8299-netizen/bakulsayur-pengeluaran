@@ -1,23 +1,28 @@
-# Bakul Sayur — Pengeluaran Fullstack
+# Bakul Sayur — Pengeluaran Offline-First
 
 Production web app untuk manajemen pengeluaran Bakul Sayur.
 
 ## Stack
-- Frontend: HTML/CSS/JavaScript responsive/PWA
-- Backend: Supabase Auth + PostgreSQL + RPC + RLS
+- Frontend: HTML/CSS/JavaScript responsive + PWA
+- Offline: Service Worker + IndexedDB
+- Backend: Supabase PostgreSQL + RPC + Edge Function PIN
 - Hosting: Vercel
 
 ## Production database
-Database menggunakan tabel ber-prefix `bakul_` pada Supabase. Data historis telah dimigrasikan langsung ke Supabase.
+Aplikasi menggunakan project Supabase `nxnecmtlzfgududejput`. Data historis berada di tabel ber-prefix `bakul_`; dump transaksi nyata tidak disimpan di repository public.
 
-**Catatan keamanan:** SQL dump transaksi nyata tidak disimpan di repository public ini. Data operasional hanya berada di Supabase.
+## Data terverifikasi
+- 244 master item
+- 472 transaksi
+- Total historis Rp23.237.900
+- Rentang 2026-07-28 s.d. 2026-09-22
 
-## Data migrasi terverifikasi
-- 241 master item
-- 450 transaksi
-- Total historis Rp22.766.900
-- Rentang 2026-07-28 s.d. 2026-09-05
-- 0 transaksi tanpa relasi item
+## Cara kerja offline
+- Setelah login online pertama kali, master data/dashboard/riwayat yang pernah dibuka disimpan ke IndexedDB.
+- Saat internet putus, aplikasi tetap dapat dibuka dari cache PWA.
+- Input transaksi memakai item yang sudah ada dapat disimpan ke antrean lokal.
+- Saat koneksi kembali, antrean otomatis dikirim ke Supabase lalu cache diperbarui.
+- Penambahan master item baru tetap membutuhkan internet untuk menjaga konsistensi ID database.
 
 ## Local preview
 ```bash

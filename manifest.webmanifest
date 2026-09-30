@@ -1,12 +1,25 @@
 {
   "name": "Bakul Sayur — Expense Intelligence",
   "short_name": "Bakul Sayur",
+  "id": "./",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f4f7fb",
-  "theme_color": "#38bdf8",
-  "description": "Dashboard pengeluaran Bakul Sayur terhubung Supabase",
+  "theme_color": "#047448",
+  "description": "Dashboard pengeluaran Bakul Sayur dengan mode offline-first dan sinkronisasi cloud.",
   "icons": [
-    {"src":"./assets/favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}
+    {
+      "src": "./assets/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
   ]
 }
