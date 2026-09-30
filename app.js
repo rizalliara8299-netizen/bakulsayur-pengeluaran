@@ -1,6 +1,7 @@
 const SUPABASE_URL='https://nxnecmtlzfgududejput.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_hAqV4840nvZEnPgGm3RkbQ_S4dEkICx';
 const PIN_API=`${SUPABASE_URL}/functions/v1/bakul-pin-api`;
-const state={session:null,categories:[],payments:[],items:[],historyPage:0,historyPageSize:30,lastHistory:[],dashboard:null,syncing:false,currentPage:'dashboard',historySeq:0,dashboardSeq:0,readInflight:new Map(),installPrompt:null,relatedInstalled:false};
+const state={session:null,categories:[],payments:[],items:[],historyPage:0,historyPageSize:30,lastHistory:[],dashboard:null,syncing:false,currentPage:'dashboard',historySeq:0,dashboardSeq:0,readInflight:new Map(),installPrompt:null,relatedInstalled:false,editingTransaction:null,deletingTransaction:null};
 const $=s=>document.querySelector(s); const $$=s=>[...document.querySelectorAll(s)];
 const rupiah=n=>'Rp '+new Intl.NumberFormat('id-ID').format(Number(n||0));
 const compact=n=>new Intl.NumberFormat('id-ID',{notation:'compact',maximumFractionDigits:1}).format(Number(n||0));
@@ -28,6 +29,24 @@ async function apiCallOnline(action,payload={},allowAnonymous=false,signal=null)
 function refreshRead(action,payload,key){const sig=`${action}:${JSON.stringify(payload)}`;if(state.readInflight.has(sig))return state.readInflight.get(sig);const p=apiCallOnline(action,payload).then(async d=>{await cacheSet(key,d);return d}).finally(()=>state.readInflight.delete(sig));state.readInflight.set(sig,p);return p}
 async function apiRead(action,payload={},onFresh=null){const key=cacheKey(action,payload);if(!key)return apiCallOnline(action,payload);const cached=await cacheGet(key);if(cached?.value){if(navigator.onLine)refreshRead(action,payload,key).then(d=>{onFresh?.(d);updateConnectionStatus()}).catch(()=>{});return cached.value}if(!navigator.onLine)throw new Error('Data ini belum tersimpan di perangkat. Hubungkan internet sekali untuk memuatnya.');const d=await refreshRead(action,payload,key);onFresh?.(d);return d}
 async function apiCall(action,payload={},allowAnonymous=false){if(cacheKey(action,payload)&&!allowAnonymous)return apiRead(action,payload);if(action==='create_transaction'&&!allowAnonymous){if(!navigator.onLine){await queueAdd(action,payload);await updateConnectionStatus();return{queued:true}}try{return await apiCallOnline(action,payload)}catch(error){if(networkError(error)){await queueAdd(action,payload);await updateConnectionStatus();return{queued:true}}throw error}}return apiCallOnline(action,payload,allowAnonymous)}
+async function pinRpc(functionName,payload={}){
+  if(!navigator.onLine)throw new Error('Edit dan hapus transaksi membutuhkan koneksi internet agar perubahan langsung aman di cloud.');
+  if(!state.session?.token)throw new Error('Sesi PIN tidak tersedia. Silakan masuk kembali.');
+  const response=await fetch(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json',apikey:SUPABASE_PUBLISHABLE_KEY},
+    body:JSON.stringify({p_session_token:state.session.token,...payload})
+  });
+  let data=null;try{data=await response.json()}catch{}
+  if(!response.ok){
+    const message=data?.message||data?.error||data?.hint||`HTTP ${response.status}`;
+    if(/Sesi PIN tidak valid|sudah berakhir/i.test(message))clearSession(false);
+    throw new Error(message);
+  }
+  return data;
+}
+function rpcRow(data){return Array.isArray(data)?data[0]:data}
+function formatMoneyField(el){const n=String(el?.value||'').replace(/\D/g,'');if(el)el.value=n?new Intl.NumberFormat('id-ID').format(Number(n)):''}
 async function syncPending(){if(state.syncing||!navigator.onLine||!state.session?.token)return;const rows=await queueList();if(!rows.length){updateConnectionStatus();return}state.syncing=true;await updateConnectionStatus();let synced=0;try{for(const row of rows){try{await apiCallOnline(row.action,row.payload);await queueDelete(row.id);synced++}catch(error){if(networkError(error)||/401|sesi/i.test(String(error?.message||error)))break;break}}if(synced){await cacheClear();toast(`${synced} transaksi offline berhasil disinkronkan.`);try{await bootstrap(true);if(state.currentPage==='history')await loadHistory(true,true)}catch(error){console.error(error)}}}finally{state.syncing=false;await updateConnectionStatus()}}
 function registerServiceWorker(){if(!('serviceWorker'in navigator))return;navigator.serviceWorker.register('./sw.js').then(reg=>reg.update().catch(()=>{})).catch(error=>console.error('Service worker error',error))}
 function isStandalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true}
@@ -56,11 +75,106 @@ function renderTop(rows,total){const max=Math.max(...rows.map(r=>Number(r.total)
 function categoryName(code){return state.categories.find(c=>c.code===code)?.name||code}
 function filterExpenseItems(){const cat=$('#expense-category').value;const q=$('#expense-item-search').value.trim().toLowerCase();const list=state.items.filter(i=>(!cat||i.category_code===cat)&&(!q||i.name.toLowerCase().includes(q))).slice(0,100);$('#expense-item').innerHTML='<option value="">Pilih item</option>'+list.map(i=>`<option value="${i.id}">${escapeHtml(i.name)}</option>`).join('')}
 async function saveExpense(e){e.preventDefault();const btn=$('#save-expense');btn.disabled=true;try{const cleanPrice=Number($('#expense-total').value.replace(/\D/g,''));const result=await apiCall('create_transaction',{date:$('#expense-date').value,itemId:$('#expense-item').value,qty:Number($('#expense-qty').value),unit:$('#expense-unit').value.trim()||'',paymentCode:$('#expense-payment').value,totalPrice:cleanPrice});toast(result?.queued?'Pengeluaran tersimpan di perangkat dan akan otomatis sinkron saat online.':'Pengeluaran berhasil disimpan ke cloud.');e.target.reset();$('#expense-date').value=new Date().toISOString().slice(0,10);filterExpenseItems();if(!result?.queued)await loadDashboard();await updateConnectionStatus()}catch(err){toast(err.message,true)}finally{btn.disabled=false}}
-function renderHistory(d,seq){if(seq!==state.historySeq)return;const rows=d.rows||[];state.lastHistory=rows;const body=$('#history-body');const html=rows.map(r=>`<tr><td><strong>${escapeHtml(r.transaction_no)}</strong></td><td>${fmtDate(r.transaction_date)}</td><td>${escapeHtml(r.item_name_snapshot)}</td><td><span class="badge">${escapeHtml(categoryName(r.category_code))}</span></td><td>${r.qty}${r.unit?' '+escapeHtml(r.unit):''}</td><td><span class="badge dark">${escapeHtml(state.payments.find(p=>p.code===r.payment_code)?.name||r.payment_code)}</span></td><td class="money">${rupiah(r.total_price)}</td></tr>`).join('')||'<tr><td colspan="7" class="empty">Data tidak ditemukan.</td></tr>';setStableHTML(body,html);$('#history-page-info').textContent=`Halaman ${state.historyPage+1}`;$('#history-prev').disabled=state.historyPage===0;$('#history-next').disabled=!d.hasMore}
+function renderHistory(d,seq){if(seq!==state.historySeq)return;const rows=d.rows||[];state.lastHistory=rows;const body=$('#history-body');const html=rows.map(r=>`<tr><td><strong>${escapeHtml(r.transaction_no)}</strong></td><td>${fmtDate(r.transaction_date)}</td><td>${escapeHtml(r.item_name_snapshot)}</td><td><span class="badge">${escapeHtml(categoryName(r.category_code))}</span></td><td>${r.qty}${r.unit?' '+escapeHtml(r.unit):''}</td><td><span class="badge dark">${escapeHtml(state.payments.find(p=>p.code===r.payment_code)?.name||r.payment_code)}</span></td><td class="money">${rupiah(r.total_price)}</td><td class="history-actions"><button type="button" class="row-action edit" data-edit-transaction="${r.id}" aria-label="Edit ${escapeHtml(r.transaction_no)}">Edit</button><button type="button" class="row-action danger" data-delete-transaction="${r.id}" aria-label="Hapus ${escapeHtml(r.transaction_no)}">Hapus</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">Data tidak ditemukan.</td></tr>';setStableHTML(body,html);$('#history-page-info').textContent=`Halaman ${state.historyPage+1}`;$('#history-prev').disabled=state.historyPage===0;$('#history-next').disabled=!d.hasMore}
 async function loadHistory(reset=false,force=false){if(reset)state.historyPage=0;const seq=++state.historySeq,cat=$('#history-category').value,date=$('#history-date').value,q=$('#history-search').value.trim(),payload={page:state.historyPage,pageSize:state.historyPageSize,search:q,category:cat,dateFrom:date||'',dateTo:date||''};$('#history-body').classList.add('is-refreshing');try{const key=cacheKey('history',payload);const d=force&&navigator.onLine?await refreshRead('history',payload,key):await apiRead('history',payload,fresh=>renderHistory(fresh,seq));renderHistory(d,seq)}catch(e){if(seq===state.historySeq)toast(e.message,true)}finally{if(seq===state.historySeq)$('#history-body').classList.remove('is-refreshing')}}
+function populateEditTransactionItems(categoryCode,selectedId=''){
+  const select=$('#edit-transaction-item');
+  const items=state.items.filter(i=>i.category_code===categoryCode);
+  select.innerHTML='<option value="">Pilih item</option>'+items.map(i=>`<option value="${i.id}">${escapeHtml(i.name)}</option>`).join('');
+  if(selectedId&&items.some(i=>i.id===selectedId))select.value=selectedId;
+}
+async function openEditTransaction(transactionId){
+  if(!navigator.onLine)return toast('Hubungkan internet untuk mengedit transaksi agar perubahan langsung tersimpan aman di cloud.',true);
+  const fallback=state.lastHistory.find(r=>r.id===transactionId);
+  try{
+    const data=await pinRpc('bakul_get_transaction_pin_session',{p_transaction_id:transactionId});
+    const row=rpcRow(data);
+    if(!row)throw new Error('Transaksi tidak ditemukan.');
+    state.editingTransaction=row;
+    $('#edit-transaction-meta').textContent=`${row.transaction_no} · ${row.item_name_snapshot}`;
+    $('#edit-transaction-date').value=row.transaction_date||'';
+    $('#edit-transaction-category').innerHTML=state.categories.map(x=>`<option value="${x.code}">${escapeHtml(x.name)}</option>`).join('');
+    $('#edit-transaction-category').value=row.category_code||fallback?.category_code||'';
+    populateEditTransactionItems($('#edit-transaction-category').value,row.item_id||'');
+    $('#edit-transaction-qty').value=Number(row.qty);
+    $('#edit-transaction-unit').value=row.unit||'';
+    $('#edit-transaction-payment').innerHTML=state.payments.map(x=>`<option value="${x.code}">${escapeHtml(x.name)}</option>`).join('');
+    $('#edit-transaction-payment').value=row.payment_code||'';
+    $('#edit-transaction-total').value=new Intl.NumberFormat('id-ID').format(Number(row.total_price||0));
+    $('#edit-transaction-dialog').showModal();
+  }catch(error){toast(error.message,true)}
+}
+function openDeleteTransaction(transactionId){
+  const row=state.lastHistory.find(r=>r.id===transactionId);
+  if(!row)return toast('Transaksi tidak ditemukan pada halaman ini.',true);
+  state.deletingTransaction=row;
+  $('#delete-transaction-item').textContent=row.item_name_snapshot||row.transaction_no;
+  $('#delete-transaction-meta').textContent=`${row.transaction_no} · ${fmtDate(row.transaction_date)} · ${rupiah(row.total_price)}`;
+  $('#delete-transaction-dialog').showModal();
+}
+async function refreshAfterTransactionMutation(){
+  await cacheClear();
+  const jobs=[loadHistory(true,true),loadDashboard(true)];
+  if(window.loadHistorySummary)jobs.push(window.loadHistorySummary(true));
+  await Promise.allSettled(jobs);
+}
+async function saveEditedTransaction(event){
+  event.preventDefault();
+  const row=state.editingTransaction;
+  if(!row)return;
+  const button=$('#save-edit-transaction');
+  if(button.disabled)return;
+  const totalPrice=Number($('#edit-transaction-total').value.replace(/\D/g,''));
+  const payload={
+    p_transaction_id:row.id,
+    p_date:$('#edit-transaction-date').value,
+    p_item_id:$('#edit-transaction-item').value,
+    p_qty:Number($('#edit-transaction-qty').value),
+    p_unit:$('#edit-transaction-unit').value.trim()||'',
+    p_payment_code:$('#edit-transaction-payment').value,
+    p_total_price:totalPrice
+  };
+  if(!payload.p_date||!payload.p_item_id||!payload.p_payment_code||!Number.isFinite(payload.p_qty)||payload.p_qty<=0||!Number.isFinite(totalPrice)||totalPrice<=0)return toast('Lengkapi data transaksi dengan benar.',true);
+  button.disabled=true;button.classList.add('is-loading');
+  try{
+    await pinRpc('bakul_update_transaction_pin_session',payload);
+    $('#edit-transaction-dialog').close();state.editingTransaction=null;
+    toast('Transaksi berhasil diperbarui dan tersimpan di cloud.');
+    await refreshAfterTransactionMutation();
+  }catch(error){toast(error.message,true)}
+  finally{button.disabled=false;button.classList.remove('is-loading')}
+}
+async function confirmDeleteTransaction(){
+  const row=state.deletingTransaction;
+  if(!row)return;
+  if(!navigator.onLine)return toast('Hubungkan internet untuk menghapus transaksi agar perubahan langsung tersimpan aman di cloud.',true);
+  const button=$('#confirm-delete-transaction');
+  if(button.disabled)return;
+  button.disabled=true;button.classList.add('is-loading');
+  try{
+    await pinRpc('bakul_delete_transaction_pin_session',{p_transaction_id:row.id});
+    $('#delete-transaction-dialog').close();state.deletingTransaction=null;
+    toast(`Transaksi ${row.transaction_no} berhasil dihapus.`);
+    await refreshAfterTransactionMutation();
+  }catch(error){toast(error.message,true)}
+  finally{button.disabled=false;button.classList.remove('is-loading')}
+}
 function exportCsv(){const rows=state.lastHistory;if(!rows.length)return toast('Tidak ada data untuk diekspor.',true);const head=['ID','Tanggal','Kategori','Item','Qty','Satuan','Pembayaran','Total Harga'];const data=rows.map(r=>[r.transaction_no,r.transaction_date,categoryName(r.category_code),r.item_name_snapshot,r.qty,r.unit||'',state.payments.find(p=>p.code===r.payment_code)?.name||r.payment_code,r.total_price]);const csv=[head,...data].map(row=>row.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download=`bakul-sayur-riwayat-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(a.href)}
 async function loadMaster(){const q=$('#master-search')?.value.trim().toLowerCase()||'',cat=$('#master-category')?.value||'';const rows=state.items.filter(i=>(!cat||i.category_code===cat)&&(!q||`${i.legacy_item_id||''} ${i.name}`.toLowerCase().includes(q)));const body=$('#master-body');const html=rows.map(i=>`<tr><td>${escapeHtml(i.legacy_item_id||'—')}</td><td><strong>${escapeHtml(i.name)}</strong></td><td><span class="badge">${escapeHtml(categoryName(i.category_code))}</span></td><td>${escapeHtml(i.unit_default||'—')}</td><td><span class="badge success">Aktif</span></td></tr>`).join('')||'<tr><td colspan="5" class="empty">Item tidak ditemukan.</td></tr>';setStableHTML(body,html);const counts=state.categories.map(x=>({name:x.name,n:state.items.filter(i=>i.category_code===x.code).length})),summary=$('#master-summary'),summaryHtml=counts.map(x=>`<div class="mini-kpi"><span>${escapeHtml(x.name.toUpperCase())}</span><strong>${x.n}</strong></div>`).join('');if(setStableHTML(summary,summaryHtml))animateOnce(summary,'.mini-kpi')}
 async function addItem(e){e.preventDefault();try{if(!navigator.onLine)throw new Error('Tambah master item membutuhkan koneksi internet. Transaksi dengan item yang sudah ada tetap bisa dicatat offline.');const cat=$('#new-item-category').value,name=$('#new-item-name').value.trim(),unit=$('#new-item-unit').value.trim()||'';const existing=state.items.some(i=>i.category_code===cat&&i.name.trim().toLowerCase()===name.toLowerCase());if(existing)throw new Error('Item dengan nama tersebut sudah ada pada kategori ini.');const created=await apiCall('create_item',{categoryCode:cat,name,unitDefault:unit});const item=Array.isArray(created)?created[0]:created;if(item)state.items.push(item);$('#item-dialog').close();e.target.reset();populateSelects();loadMaster();toast('Item baru berhasil ditambahkan.')}catch(err){toast(err.message,true)}}
-function bind(){const hs=debounce(()=>loadHistory(true),240);$('#login-form').addEventListener('submit',async e=>{e.preventDefault();const b=$('#login-btn');if(b.disabled)return;b.disabled=true;b.classList.add('is-loading');try{await login($('#login-pin').value);$('#login-view').classList.add('hidden');$('#app').classList.remove('hidden');$('#login-pin').value='';await bootstrap();const p=new URLSearchParams(location.search).get('page');if(p)navigate(p)}catch(err){toast(err.message,true);$('#login-pin').select()}finally{b.disabled=false;b.classList.remove('is-loading')}});$$('[data-page]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();navigate(b.dataset.page)}));$('#logout-btn').addEventListener('click',()=>logout());$('#refresh-dashboard').addEventListener('click',()=>loadDashboard(true));$('#dashboard-month').addEventListener('change',()=>loadDashboard());$('#expense-category').addEventListener('change',filterExpenseItems);$('#expense-item-search').addEventListener('input',debounce(filterExpenseItems,100));$('#expense-item').addEventListener('change',()=>{const it=state.items.find(i=>i.id===$('#expense-item').value);if(it?.unit_default)$('#expense-unit').value=it.unit_default});$('#expense-total').addEventListener('input',e=>{const n=e.target.value.replace(/\D/g,'');e.target.value=n?new Intl.NumberFormat('id-ID').format(Number(n)):''});$('#expense-form').addEventListener('submit',saveExpense);$('#history-search').addEventListener('input',hs);$('#history-category').addEventListener('change',()=>loadHistory(true));$('#history-date').addEventListener('change',()=>{loadHistory(true);window.loadHistorySummary?.()});$('#history-reset').addEventListener('click',()=>{$('#history-search').value='';$('#history-category').value='';$('#history-date').value='';loadHistory(true);window.loadHistorySummary?.()});$('#history-prev').addEventListener('click',()=>{if(state.historyPage>0){state.historyPage--;loadHistory()}});$('#history-next').addEventListener('click',()=>{state.historyPage++;loadHistory()});$('#export-csv').addEventListener('click',exportCsv);$('#master-search').addEventListener('input',debounce(loadMaster,120));$('#master-category').addEventListener('change',loadMaster);$('#open-add-item').addEventListener('click',()=>$('#item-dialog').showModal());$('#close-dialog').addEventListener('click',()=>$('#item-dialog').close());$('#cancel-item').addEventListener('click',()=>$('#item-dialog').close());$('#add-item-form').addEventListener('submit',addItem);$$('[data-install-app]').forEach(b=>b.addEventListener('click',handleInstall));$('#close-install-dialog')?.addEventListener('click',()=>$('#install-dialog').close());bindInstallEvents()}
+function bind(){const hs=debounce(()=>loadHistory(true),240);$('#login-form').addEventListener('submit',async e=>{e.preventDefault();const b=$('#login-btn');if(b.disabled)return;b.disabled=true;b.classList.add('is-loading');try{await login($('#login-pin').value);$('#login-view').classList.add('hidden');$('#app').classList.remove('hidden');$('#login-pin').value='';await bootstrap();const p=new URLSearchParams(location.search).get('page');if(p)navigate(p)}catch(err){toast(err.message,true);$('#login-pin').select()}finally{b.disabled=false;b.classList.remove('is-loading')}});$$('[data-page]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();navigate(b.dataset.page)}));$('#logout-btn').addEventListener('click',()=>logout());$('#refresh-dashboard').addEventListener('click',()=>loadDashboard(true));$('#dashboard-month').addEventListener('change',()=>loadDashboard());$('#expense-category').addEventListener('change',filterExpenseItems);$('#expense-item-search').addEventListener('input',debounce(filterExpenseItems,100));$('#expense-item').addEventListener('change',()=>{const it=state.items.find(i=>i.id===$('#expense-item').value);if(it?.unit_default)$('#expense-unit').value=it.unit_default});$('#expense-total').addEventListener('input',e=>formatMoneyField(e.target));$('#expense-form').addEventListener('submit',saveExpense);$('#history-search').addEventListener('input',hs);$('#history-category').addEventListener('change',()=>loadHistory(true));$('#history-date').addEventListener('change',()=>{loadHistory(true);window.loadHistorySummary?.()});$('#history-reset').addEventListener('click',()=>{$('#history-search').value='';$('#history-category').value='';$('#history-date').value='';loadHistory(true);window.loadHistorySummary?.();toast('Filter dibersihkan. Data transaksi tetap aman.')});
+$('#history-body').addEventListener('click',event=>{const edit=event.target.closest('[data-edit-transaction]');if(edit)return openEditTransaction(edit.dataset.editTransaction);const del=event.target.closest('[data-delete-transaction]');if(del)return openDeleteTransaction(del.dataset.deleteTransaction)});
+$('#edit-transaction-category').addEventListener('change',()=>populateEditTransactionItems($('#edit-transaction-category').value));
+$('#edit-transaction-item').addEventListener('change',()=>{const item=state.items.find(i=>i.id===$('#edit-transaction-item').value);if(item?.unit_default)$('#edit-transaction-unit').value=item.unit_default});
+$('#edit-transaction-total').addEventListener('input',event=>formatMoneyField(event.target));
+$('#edit-transaction-form').addEventListener('submit',saveEditedTransaction);
+$('#close-edit-transaction').addEventListener('click',()=>{$('#edit-transaction-dialog').close();state.editingTransaction=null});
+$('#cancel-edit-transaction').addEventListener('click',()=>{$('#edit-transaction-dialog').close();state.editingTransaction=null});
+$('#close-delete-transaction').addEventListener('click',()=>{$('#delete-transaction-dialog').close();state.deletingTransaction=null});
+$('#cancel-delete-transaction').addEventListener('click',()=>{$('#delete-transaction-dialog').close();state.deletingTransaction=null});
+$('#confirm-delete-transaction').addEventListener('click',confirmDeleteTransaction);$('#history-prev').addEventListener('click',()=>{if(state.historyPage>0){state.historyPage--;loadHistory()}});$('#history-next').addEventListener('click',()=>{state.historyPage++;loadHistory()});$('#export-csv').addEventListener('click',exportCsv);$('#master-search').addEventListener('input',debounce(loadMaster,120));$('#master-category').addEventListener('change',loadMaster);$('#open-add-item').addEventListener('click',()=>$('#item-dialog').showModal());$('#close-dialog').addEventListener('click',()=>$('#item-dialog').close());$('#cancel-item').addEventListener('click',()=>$('#item-dialog').close());$('#add-item-form').addEventListener('submit',addItem);$$('[data-install-app]').forEach(b=>b.addEventListener('click',handleInstall));$('#close-install-dialog')?.addEventListener('click',()=>$('#install-dialog').close());
+$('#edit-transaction-dialog').addEventListener('close',()=>{state.editingTransaction=null});
+$('#delete-transaction-dialog').addEventListener('close',()=>{state.deletingTransaction=null});
+bindInstallEvents()}
 async function init(){registerServiceWorker();bind();setupMotion();window.addEventListener('online',()=>{updateConnectionStatus();syncPending()});window.addEventListener('offline',updateConnectionStatus);state.session=getSession();const valid=state.session?.token&&state.session?.expiresAt&&new Date(state.session.expiresAt)>new Date();if(valid){$('#login-view').classList.add('hidden');$('#app').classList.remove('hidden')}else{clearSession(false)}document.documentElement.classList.remove('booting');await updateConnectionStatus();if(valid){try{await bootstrap();const p=new URLSearchParams(location.search).get('page');if(p)navigate(p);if(navigator.onLine)syncPending()}catch(e){toast(e.message,true);if(navigator.onLine)clearSession(false)}}else{setTimeout(()=>$('#login-pin')?.focus(),80)}}
 init();
