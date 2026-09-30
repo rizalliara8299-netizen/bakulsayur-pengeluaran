@@ -95,7 +95,7 @@
 
         <section id="page-history" class="page">
           <div class="section-toolbar history-toolbar"><div><h2>Riwayat Belanja</h2><p>Telusuri transaksi tersimpan dengan filter cepat atau unduh laporan lengkap per bulan.</p></div><div class="history-report-actions"><input id="history-report-month" class="control" type="month" aria-label="Bulan laporan"/><button id="download-monthly-history" class="btn btn-dark" type="button">↓ Download Excel Bulanan</button><button id="export-csv" class="btn btn-ghost" type="button">Export Halaman CSV</button></div></div>
-          <article class="panel"><div class="filter-grid"><input id="history-search" class="control" type="search" placeholder="Cari item atau ID..."/><select id="history-category" class="control"></select><input id="history-date" class="control" type="date"/><button id="history-reset" class="btn btn-ghost">Reset</button></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Tanggal</th><th>Item</th><th>Kategori</th><th>Qty</th><th>Pembayaran</th><th class="right">Total</th></tr></thead><tbody id="history-body"></tbody></table></div><div class="pagination"><button id="history-prev" class="btn btn-ghost">← Sebelumnya</button><span id="history-page-info">Halaman 1</span><button id="history-next" class="btn btn-ghost">Berikutnya →</button></div></article>
+          <article class="panel"><div class="filter-grid"><input id="history-search" class="control" type="search" placeholder="Cari item atau ID..."/><select id="history-category" class="control"></select><input id="history-date" class="control" type="date"/><button id="history-reset" class="btn btn-ghost btn-filter-clear" type="button" title="Hanya membersihkan filter, tidak menghapus transaksi">Bersihkan Filter</button></div><div class="filter-safety-note"><span>ℹ</span><span><strong>Bersihkan Filter</strong> hanya mengosongkan pencarian dan tanggal. Data transaksi tidak ikut terhapus.</span></div><div class="table-wrap"><table class="history-table"><thead><tr><th>ID</th><th>Tanggal</th><th>Item</th><th>Kategori</th><th>Qty</th><th>Pembayaran</th><th class="right">Total</th><th class="right history-actions-head">Aksi</th></tr></thead><tbody id="history-body"></tbody></table></div><div class="pagination"><button id="history-prev" class="btn btn-ghost">← Sebelumnya</button><span id="history-page-info">Halaman 1</span><button id="history-next" class="btn btn-ghost">Berikutnya →</button></div></article>
         </section>
 
         <section id="page-master" class="page">
@@ -110,6 +110,46 @@
   </div>
 
   <dialog id="install-dialog" class="install-dialog"><div class="install-guide-card"><button id="close-install-dialog" class="icon-close install-close" type="button">×</button><img class="install-guide-icon" src="./assets/app-icon.svg" alt="Bakul Sayur" /><span class="mini-label">INSTALL APP</span><h3 id="install-guide-title">Pasang Bakul Sayur</h3><p id="install-guide-copy"></p><ol id="install-guide-steps"></ol><button class="btn btn-primary install-done" type="button" onclick="document.getElementById('install-dialog').close()">Mengerti</button></div></dialog><dialog id="item-dialog"><form id="add-item-form" method="dialog" class="dialog-card"><div class="dialog-head"><div><span class="mini-label">MASTER ITEM</span><h3>Tambah Item Baru</h3></div><button id="close-dialog" type="button" class="icon-close">×</button></div><label>Kategori<select id="new-item-category" required></select></label><label>Nama Item<input id="new-item-name" required maxlength="100" placeholder="Nama item"/></label><label>Satuan Default <span class="optional">opsional</span><input id="new-item-unit" placeholder="kg / pcs / bungkus"/></label><div class="dialog-actions"><button type="button" id="cancel-item" class="btn btn-ghost">Batal</button><button type="submit" class="btn btn-primary">Simpan Item</button></div></form></dialog>
+
+  <dialog id="edit-transaction-dialog" class="transaction-dialog">
+    <form id="edit-transaction-form" class="dialog-card transaction-dialog-card">
+      <div class="dialog-head">
+        <div><span class="mini-label">RIWAYAT · EDIT</span><h3>Edit Transaksi</h3><p id="edit-transaction-meta" class="dialog-subtitle"></p></div>
+        <button id="close-edit-transaction" type="button" class="icon-close" aria-label="Tutup">×</button>
+      </div>
+      <div class="form-grid edit-transaction-grid">
+        <label>Tanggal Belanja<input id="edit-transaction-date" type="date" required /></label>
+        <label>Kategori<select id="edit-transaction-category" required></select></label>
+        <label class="span-2">Item Belanja<select id="edit-transaction-item" required></select><small>Item mengikuti kategori yang dipilih.</small></label>
+        <label>Qty<input id="edit-transaction-qty" type="number" min="0.01" step="0.01" required /></label>
+        <label>Satuan <span class="optional">opsional</span><input id="edit-transaction-unit" type="text" placeholder="kg / pcs / bungkus" /></label>
+        <label>Metode Pembayaran<select id="edit-transaction-payment" required></select></label>
+        <label>Total Harga<div class="money-input"><span>Rp</span><input id="edit-transaction-total" inputmode="numeric" required /></div></label>
+      </div>
+      <div class="dialog-actions transaction-dialog-actions">
+        <button id="cancel-edit-transaction" type="button" class="btn btn-ghost">Batal</button>
+        <button id="save-edit-transaction" type="submit" class="btn btn-primary">Simpan Perubahan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="delete-transaction-dialog" class="transaction-dialog danger-dialog">
+    <div class="dialog-card delete-dialog-card">
+      <div class="dialog-head">
+        <div><span class="mini-label danger-label">HAPUS TRANSAKSI</span><h3>Hapus transaksi ini?</h3></div>
+        <button id="close-delete-transaction" type="button" class="icon-close" aria-label="Tutup">×</button>
+      </div>
+      <div class="delete-warning">
+        <p><strong id="delete-transaction-item">Transaksi</strong></p>
+        <p id="delete-transaction-meta">Data yang dipilih akan dihapus permanen.</p>
+      </div>
+      <p class="delete-help">Hanya transaksi ini yang dihapus. Transaksi lain tidak akan berubah. Tindakan ini tidak bisa dibatalkan.</p>
+      <div class="dialog-actions transaction-dialog-actions">
+        <button id="cancel-delete-transaction" type="button" class="btn btn-ghost">Batal</button>
+        <button id="confirm-delete-transaction" type="button" class="btn btn-danger">Hapus Transaksi</button>
+      </div>
+    </div>
+  </dialog>
 
   <script src="./app.js"></script>
   <script src="./monthly.js"></script>
