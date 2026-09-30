@@ -17,14 +17,16 @@
   function renderMonthlyAnalysis(d){
     if(!document.getElementById('monthly-summary-cards'))return;
     const month=d.month||$('#dashboard-month').value||currentMonth();
-    const f=monthlyFacts(d);const tx=Number(d.transactionCount||0);
+    const f=monthlyFacts(d),tx=Number(d.transactionCount||0);
     const cards=[
       ['Total Bulan Ini',rupiah(d.totalExpense||0),monthLabel(month)],
       ['Jumlah Transaksi',new Intl.NumberFormat('id-ID').format(tx),'transaksi tercatat'],
       ['Item Tertinggi',f.topItem?.item||'—',f.topItem?rupiah(f.topItem.total):'Belum ada data'],
       ['Kategori Dominan',f.dominantCategory?.name||'—',f.dominantCategory?rupiah(f.dominantCategory.total):'Belum ada data']
     ];
-    $('#monthly-summary-cards').innerHTML=cards.map(c=>`<div class="analysis-kpi"><span>${escapeHtml(c[0])}</span><strong>${escapeHtml(c[1])}</strong><small>${escapeHtml(c[2])}</small></div>`).join('');
+    const summary=$('#monthly-summary-cards');
+    const summaryHtml=cards.map(x=>`<div class="analysis-kpi"><span>${escapeHtml(x[0])}</span><strong title="${escapeHtml(x[1])}">${escapeHtml(x[1])}</strong><small>${escapeHtml(x[2])}</small></div>`).join('');
+    if(setStableHTML(summary,summaryHtml))animateOnce(summary,'.analysis-kpi');
 
     const insights=[];
     if(!tx){
@@ -39,10 +41,14 @@
       if(f.dominantPayment&&Number(f.dominantPayment.total)>0)insights.push(`${f.dominantPayment.name} mendominasi nilai pembayaran bulan ini sebesar ${rupiah(f.dominantPayment.total)}.`);
       if(f.topDay)insights.push(`Hari dengan pengeluaran tertinggi adalah ${fmtDate(f.topDay.date)} sebesar ${rupiah(f.topDay.total)}.`);
     }
-    $('#monthly-insights').innerHTML=insights.map((x,i)=>`<div class="insight-row"><span>${i+1}</span><p>${escapeHtml(x)}</p></div>`).join('');
+    const insightsEl=$('#monthly-insights');
+    const insightsHtml=insights.map((x,i)=>`<div class="insight-row"><span aria-hidden="true">${i+1}</span><p>${escapeHtml(x)}</p></div>`).join('');
+    if(setStableHTML(insightsEl,insightsHtml))animateOnce(insightsEl,'.insight-row');
 
     const rank=(d.topItems||[]).slice(0,5),max=Math.max(...rank.map(r=>Number(r.total)),1);
-    $('#monthly-ranking').innerHTML=rank.map((r,i)=>`<div class="month-rank-row"><div class="month-rank-index">${i+1}</div><div class="month-rank-copy"><strong>${escapeHtml(r.item)}</strong><span>${escapeHtml(categoryName(r.category_code))} · ${r.transaction_count||0} transaksi</span><div class="month-rank-bar"><i style="width:${Math.max(5,Number(r.total)/max*100)}%"></i></div></div><b>${rupiah(r.total)}</b></div>`).join('')||'<div class="empty compact-empty">Belum ada ranking pada bulan ini.</div>';
+    const rankEl=$('#monthly-ranking');
+    const rankHtml=rank.map((r,i)=>`<div class="month-rank-row"><div class="month-rank-index">${i+1}</div><div class="month-rank-copy"><strong title="${escapeHtml(r.item)}">${escapeHtml(r.item)}</strong><span>${escapeHtml(categoryName(r.category_code))} · ${r.transaction_count||0} transaksi</span><div class="month-rank-bar"><i style="width:${Math.max(5,Number(r.total)/max*100)}%"></i></div></div><b>${rupiah(r.total)}</b></div>`).join('')||'<div class="empty compact-empty">Belum ada ranking pada bulan ini.</div>';
+    if(setStableHTML(rankEl,rankHtml))animateOnce(rankEl,'.month-rank-row');
   }
 
   async function fetchMonthTransactions(month){
