@@ -5,8 +5,8 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f4f7fb",
-  "theme_color": "#047448",
+  "background_color": "#f4f7f3",
+  "theme_color": "#12382d",
   "description": "Dashboard pengeluaran Bakul Sayur dengan mode offline-first dan sinkronisasi cloud.",
   "icons": [
     {
