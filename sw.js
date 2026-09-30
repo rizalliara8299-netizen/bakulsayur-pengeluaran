@@ -1,1 +1,28 @@
-const CACHE='bakul-sayur-shell-v5';const SHELL=['./','./index.html','./styles.css','./polish.css','./monthly.css','./premium.css','./app.js','./monthly.js','./history-summary.js','./manifest.webmanifest','./assets/bakul-sayur-logo.svg','./assets/bakul-sayur-mark.svg','./assets/favicon.svg','./assets/app-icon.svg'];self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));async function swr(req,fallback){const c=await caches.open(CACHE),cached=await c.match(req)||await c.match(fallback),net=fetch(req).then(r=>{if(r&&r.ok)c.put(req,r.clone());return r}).catch(()=>null);return cached||await net||new Response('Offline',{status:503})}self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET')return;const u=new URL(r.url);if(u.origin!==self.location.origin)return;e.respondWith(r.mode==='navigate'?swr(r,'./index.html'):swr(r))});
+const CACHE='bakul-sayur-shell-v6';
+const SHELL=['./','./index.html','./styles.css','./polish.css','./monthly.css','./premium.css','./app.js','./monthly.js','./history-summary.js','./manifest.webmanifest','./assets/bakul-sayur-logo.svg','./assets/bakul-sayur-mark.svg','./assets/favicon.svg','./assets/app-icon.svg'];
+self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()))});
+self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()))});
+async function networkFirst(req,fallback){
+  const cache=await caches.open(CACHE);
+  try{
+    const res=await fetch(req,{cache:'no-store'});
+    if(res&&res.ok)cache.put(req,res.clone());
+    return res;
+  }catch{
+    return await cache.match(req)||await cache.match(fallback)||new Response('Offline',{status:503});
+  }
+}
+async function staleWhileRevalidate(req){
+  const cache=await caches.open(CACHE);
+  const cached=await cache.match(req);
+  const fresh=fetch(req).then(res=>{if(res&&res.ok)cache.put(req,res.clone());return res}).catch(()=>null);
+  return cached||await fresh||new Response('Offline',{status:503});
+}
+self.addEventListener('fetch',event=>{
+  const req=event.request;
+  if(req.method!=='GET')return;
+  const url=new URL(req.url);
+  if(url.origin!==self.location.origin)return;
+  const freshAsset=req.mode==='navigate'||/\.(?:html|css|js|webmanifest)$/.test(url.pathname);
+  event.respondWith(freshAsset?networkFirst(req,req.mode==='navigate'?'./index.html':undefined):staleWhileRevalidate(req));
+});
