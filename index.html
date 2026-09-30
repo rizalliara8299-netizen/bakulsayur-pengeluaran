@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./polish.css" />
   <link rel="stylesheet" href="./monthly.css" />
+  <link rel="stylesheet" href="./premium.css" />
   <title>Bakul Sayur — Manajemen Pengeluaran</title>
 </head>
 <body>
@@ -29,7 +30,7 @@
       </form>
       <p class="micro">PIN diverifikasi di server Supabase. Setelah 5 percobaan salah, akses dikunci sementara.</p>
     </div>
-    <div class="login-art"><div class="orb one"></div><div class="orb two"></div><div class="glass-card"><span>LIVE FINANCE</span><strong id="login-preview-total">Rp 22,7 jt</strong><p>Data pengeluaran terpusat, rapi, dan siap dipantau dari desktop maupun ponsel.</p></div></div>
+    <div class="login-art"><div class="orb one"></div><div class="orb two"></div><div class="glass-card"><span>BAKUL SAYUR FINANCE</span><strong id="login-preview-total">Offline + Cloud</strong><p>Catat pengeluaran lebih cepat. Tetap bekerja saat offline dan tersinkron otomatis saat koneksi kembali.</p></div></div>
   </section>
 
   <div id="app" class="app-shell hidden">
@@ -50,10 +51,10 @@
     <main class="main">
       <header class="topbar">
         <div class="topbar-copy"><div class="mobile-brand-row"><img src="./assets/bakul-sayur-mark.svg" alt="" /><span>Bakul Sayur</span></div><span class="eyebrow light">BAKUL SAYUR CONTROL CENTER</span><h1 id="page-title">Ringkasan Pengeluaran</h1><p id="page-subtitle">Pantau arus pengeluaran dan pola belanja dalam satu tampilan.</p></div>
-        <div class="topbar-actions"><div class="status-pill" id="connection-status"><i></i><span>Memeriksa koneksi…</span></div><div class="profile-chip"><div><strong>Admin Panel</strong><span id="profile-email">Akses PIN</span></div><div class="avatar light-avatar">AD</div></div></div>
+        <div class="topbar-actions"><button class="install-top-btn" type="button" data-install-app>↓ <span>Install Aplikasi</span></button><div class="status-pill" id="connection-status"><i></i><span>Memeriksa koneksi…</span></div><div class="profile-chip"><div><strong>Admin Panel</strong><span id="profile-email">Akses PIN</span></div><div class="avatar light-avatar">AD</div></div></div>
       </header>
 
-      <div class="content">
+      <div class="content"><aside id="install-banner" class="install-banner"><div class="install-app-icon"><img src="./assets/app-icon.svg" alt="Bakul Sayur" /></div><div class="install-banner-copy"><span class="mini-label">BAKUL SAYUR APP</span><strong>Pasang dashboard di perangkat Anda</strong><p>Buka lebih cepat, tetap bisa mencatat saat offline, lalu sinkron otomatis ke cloud.</p></div><button class="install-banner-btn" type="button" data-install-app>Install Sekarang <b>→</b></button></aside>
         <section id="page-dashboard" class="page active">
           <div class="section-toolbar"><div><h2>Financial Overview</h2><p id="dashboard-period">Ringkasan periode terpilih</p></div><div class="toolbar-actions"><input id="dashboard-month" class="control" type="month" /><button id="refresh-dashboard" class="btn btn-dark">↻ Refresh</button></div></div>
           <div id="kpi-grid" class="kpi-grid"></div>
@@ -107,10 +108,9 @@
     <nav class="mobile-nav"><button class="active" data-page="dashboard"><span>▦</span><small>Dashboard</small></button><button data-page="input"><span>＋</span><small>Input</small></button><button data-page="history"><span>↺</span><small>Riwayat</small></button><button data-page="master"><span>◇</span><small>Master</small></button></nav>
   </div>
 
-  <dialog id="item-dialog"><form id="add-item-form" method="dialog" class="dialog-card"><div class="dialog-head"><div><span class="mini-label">MASTER ITEM</span><h3>Tambah Item Baru</h3></div><button id="close-dialog" type="button" class="icon-close">×</button></div><label>Kategori<select id="new-item-category" required></select></label><label>Nama Item<input id="new-item-name" required maxlength="100" placeholder="Nama item"/></label><label>Satuan Default <span class="optional">opsional</span><input id="new-item-unit" placeholder="kg / pcs / bungkus"/></label><div class="dialog-actions"><button type="button" id="cancel-item" class="btn btn-ghost">Batal</button><button type="submit" class="btn btn-primary">Simpan Item</button></div></form></dialog>
+  <dialog id="install-dialog" class="install-dialog"><div class="install-guide-card"><button id="close-install-dialog" class="icon-close install-close" type="button">×</button><img class="install-guide-icon" src="./assets/app-icon.svg" alt="Bakul Sayur" /><span class="mini-label">INSTALL APP</span><h3 id="install-guide-title">Pasang Bakul Sayur</h3><p id="install-guide-copy"></p><ol id="install-guide-steps"></ol><button class="btn btn-primary install-done" type="button" onclick="document.getElementById('install-dialog').close()">Mengerti</button></div></dialog><dialog id="item-dialog"><form id="add-item-form" method="dialog" class="dialog-card"><div class="dialog-head"><div><span class="mini-label">MASTER ITEM</span><h3>Tambah Item Baru</h3></div><button id="close-dialog" type="button" class="icon-close">×</button></div><label>Kategori<select id="new-item-category" required></select></label><label>Nama Item<input id="new-item-name" required maxlength="100" placeholder="Nama item"/></label><label>Satuan Default <span class="optional">opsional</span><input id="new-item-unit" placeholder="kg / pcs / bungkus"/></label><div class="dialog-actions"><button type="button" id="cancel-item" class="btn btn-ghost">Batal</button><button type="submit" class="btn btn-primary">Simpan Item</button></div></form></dialog>
 
   <script src="./app.js"></script>
   <script src="./monthly.js"></script>
-  <script src="./history-summary.js"></script>
 </body>
 </html>
