@@ -1,4 +1,4 @@
-const CACHE='bakul-sayur-shell-v6';
+const CACHE='bakul-sayur-shell-v7';
 const SHELL=['./','./index.html','./styles.css','./polish.css','./monthly.css','./premium.css','./app.js','./monthly.js','./history-summary.js','./manifest.webmanifest','./assets/bakul-sayur-logo.svg','./assets/bakul-sayur-mark.svg','./assets/favicon.svg','./assets/app-icon.svg'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()))});
