@@ -9,7 +9,7 @@ async function networkFirst(req,fallback){
     if(res&&res.ok)cache.put(req,res.clone());
     return res;
   }catch{
-    return await cache.match(req)||await cache.match(fallback)||new Response('Offline',{status:503});
+    const cached=await cache.match(req)||(fallback?await cache.match(fallback):null);return cached||new Response('Offline',{status:503});
   }
 }
 async function staleWhileRevalidate(req){
