@@ -160,7 +160,7 @@ async function history(body: any) {
   const pageSize = Math.min(100, Math.max(10, Number(body?.pageSize || 30)));
   const q = new URLSearchParams();
   q.set("select","id,transaction_no,transaction_date,category_code,item_name_snapshot,qty,unit,payment_code,total_price,client_mutation_id,created_at");
-  q.set("order","transaction_date.desc,created_at.desc");
+  q.set("order","transaction_date.desc,created_at.desc,id.desc");
   q.set("limit",String(pageSize));
   q.set("offset",String(page * pageSize));
   if (body?.category) q.set("category_code",`eq.${body.category}`);
@@ -228,16 +228,10 @@ async function cashReport(body: any) {
 async function cashWrite(body: any) {
   const {day,kind,id}=body,amount=body?.amount,note=String(body?.note||"").trim();
   if(!validDay(day)||!["opening","actual","addition","transfer_in","transfer_out"].includes(kind)||typeof amount!=="number"||!Number.isSafeInteger(amount)||amount<0||amount>999999999999||note.length>200)return json({error:"Data kas tidak valid."},400);
-  if(kind==="opening"||kind==="actual"){
-    const patch:Record<string,unknown>={day,updated_at:new Date().toISOString()};
-    if(kind==="opening"){patch.opening=amount;patch.opening_note=note;}
-    else{patch.actual=amount;patch.actual_note=note;patch.counted_at=new Date().toISOString();}
-    await adminFetch("/rest/v1/bakul_cash_days?on_conflict=day",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal,missing=default"},body:JSON.stringify(patch)});
-  }else{
-    if(!isUuid(id)||amount===0||!note)return json({error:"Nominal dan tujuan pemindahan/tambahan wajib diisi."},400);
-    await adminFetch("/rest/v1/bakul_cash_movements?on_conflict=id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify({id,day,kind,amount,note})});
-  }
-  return json({ok:true});
+  if(!isUuid(id))return json({error:"ID pencatatan tidak valid."},400);
+  if(kind==="actual" && (typeof body.expected!=="number"||!Number.isSafeInteger(body.expected)))return json({error:"Saldo seharusnya belum tersedia."},400);
+  if(!["opening","actual"].includes(kind) && (amount===0||!note))return json({error:"Nominal dan tujuan pemindahan/tambahan wajib diisi."},400);
+  return json(await adminFetch("/rest/v1/rpc/bakul_cash_write",{method:"POST",body:JSON.stringify({p_day:day,p_kind:kind,p_amount:amount,p_note:note,p_id:id,p_expected:kind==="actual"?body.expected:null})}));
 }
 
 Deno.serve(async (req) => {
