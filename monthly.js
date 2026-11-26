@@ -1,7 +1,7 @@
 (function(){
   'use strict';
 
-  const currentMonth=()=>new Date().toISOString().slice(0,7);
+  const currentMonth=()=>businessDate().slice(0,7);
   const monthBounds=month=>{const [y,m]=String(month||'').split('-').map(Number);if(!y||!m)return null;const last=new Date(y,m,0).getDate();return{dateFrom:`${month}-01`,dateTo:`${month}-${String(last).padStart(2,'0')}`}};
   const pct=v=>Number.isFinite(Number(v))?Number(v):0;
   const html=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -38,7 +38,6 @@
       else insights.push('Belum ada basis bulan sebelumnya yang cukup untuk membandingkan perubahan pengeluaran.');
       if(f.dominantCategory)insights.push(`${f.dominantCategory.name} menjadi kategori dominan dengan ${rupiah(f.dominantCategory.total)} dari ${f.dominantCategory.transaction_count||0} transaksi.`);
       if(f.topItem)insights.push(`${f.topItem.item} menjadi item dengan pengeluaran tertinggi sebesar ${rupiah(f.topItem.total)}.`);
-      if(f.dominantPayment&&Number(f.dominantPayment.total)>0)insights.push(`${f.dominantPayment.name} mendominasi nilai pembayaran bulan ini sebesar ${rupiah(f.dominantPayment.total)}.`);
       if(f.topDay)insights.push(`Hari dengan pengeluaran tertinggi adalah ${fmtDate(f.topDay.date)} sebesar ${rupiah(f.topDay.total)}.`);
     }
     const insightsEl=$('#monthly-insights');

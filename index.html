@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="./polish.css" />
   <link rel="stylesheet" href="./monthly.css" />
   <link rel="stylesheet" href="./premium.css" />
+  <link rel="stylesheet" href="./finance.css" />
   <title>Bakul Sayur — Manajemen Pengeluaran</title>
 </head>
 <body>
@@ -42,6 +43,7 @@
         <button class="nav-item active" data-page="dashboard"><span class="nav-ico">▦</span><span>Dashboard</span></button>
         <button class="nav-item" data-page="input"><span class="nav-ico">＋</span><span>Input</span></button>
         <button class="nav-item" data-page="history"><span class="nav-ico">↺</span><span>Riwayat</span></button>
+        <button class="nav-item" data-page="report"><span class="nav-ico">▤</span><span>Laporan</span></button>
         <button class="nav-item" data-page="master"><span class="nav-ico">◇</span><span>Master Data</span></button>
       </nav>
       <div class="sidebar-spacer"></div>
@@ -61,13 +63,13 @@
           <div id="kpi-grid" class="kpi-grid"></div>
           <div class="analytics-grid">
             <article class="panel trend-panel"><div class="panel-head"><div><span class="mini-label">DAILY SPEND</span><h3>Tren Pengeluaran</h3></div><span id="trend-total" class="panel-value"></span></div><div id="trend-chart" class="trend-chart"></div></article>
-            <article class="panel payment-panel"><div class="panel-head"><div><span class="mini-label">PAYMENT MIX</span><h3>Metode Transaksi</h3></div></div><div id="payment-breakdown" class="payment-list"></div></article>
+            <article class="panel price-panel"><div class="panel-head"><div><span class="mini-label">PRICE INTELLIGENCE</span><h3>Tren Kenaikan Harga</h3><p class="finance-note">Harga rata-rata tertimbang per satuan dibanding bulan sebelumnya.</p></div></div><div id="price-insights" aria-live="polite"></div></article>
           </div>
           <article class="panel"><div class="panel-head"><div><span class="mini-label">TOP SPENDING</span><h3>10 Item Belanja Tertinggi</h3></div><span class="panel-note">Berdasarkan nominal pengeluaran</span></div><div id="top-items" class="rank-list"></div></article>
 
           <article class="panel monthly-analysis-panel">
             <div class="panel-head monthly-analysis-head">
-              <div><span class="mini-label">MONTHLY INTELLIGENCE</span><h3>Analisis Bulanan Otomatis</h3><p>Sistem membaca pola pengeluaran, item, kategori, metode pembayaran, dan pergerakan dibanding bulan sebelumnya.</p></div>
+              <div><span class="mini-label">MONTHLY INTELLIGENCE</span><h3>Analisis Bulanan Otomatis</h3><p>Sistem membaca pola pengeluaran, item, kategori, dan pergerakan dibanding bulan sebelumnya.</p></div>
               <div class="monthly-actions"><input id="analysis-month" class="control" type="month" aria-label="Bulan analisis"/><button id="download-monthly-analysis" class="btn btn-dark" type="button">↓ Download Excel Bulanan</button></div>
             </div>
             <div class="monthly-analysis-content">
@@ -82,10 +84,12 @@
 
         <section id="page-input" class="page">
           <div class="section-toolbar"><div><h2>Input Pengeluaran</h2><p>Catat transaksi baru langsung ke database Supabase.</p></div></div>
+          <article class="panel finance-cash-panel"><div class="panel-head"><div><span class="mini-label">KAS BELANJA</span><h3>Saldo Harian Inventory</h3><p class="finance-note">Saldo masuk dan pemindahan bukan transaksi pembelian.</p></div></div>
+<form id="cash-form" class="form-grid"><label>Tanggal<input type="date" id="cash-date" required></label><label>Jenis pencatatan<select id="cash-kind"><option value="opening">Saldo awal hari</option><option value="addition">Saldo tambahan</option><option value="transfer_out">Pemindahan saldo keluar</option><option value="transfer_in">Pemindahan saldo masuk</option></select></label><label>Nominal (Rp)<input id="cash-amount" type="number" min="0" max="999999999999" step="1" required></label><label>Keterangan<input id="cash-note" maxlength="200" placeholder="Contoh: owner mengambil saldo"></label><div class="span-2 finance-form-actions"><button type="submit" class="btn btn-primary">Simpan Saldo</button><button type="button" id="cash-refresh" class="btn btn-ghost">Muat ulang saldo</button></div></form><div id="cash-input-summary" class="finance-note" aria-live="polite">Pilih tanggal untuk melihat saldo.</div></article>
           <article class="panel form-panel"><form id="expense-form"><div class="form-grid">
             <label>Tanggal Belanja<input id="expense-date" type="date" required /></label>
             <label>Kategori<select id="expense-category" required></select></label>
-            <label class="span-2">Item Belanja<div class="autocomplete"><input id="expense-item-search" type="search" placeholder="Cari item..." autocomplete="off"/><select id="expense-item" size="1" required></select></div><small>Item otomatis mengikuti kategori yang dipilih.</small></label>
+            <label class="span-2">Item Belanja<div class="autocomplete"><input id="expense-item-search" type="search" placeholder="Cari item..." autocomplete="off"/><select id="expense-item" size="1" required></select></div><small>Item otomatis mengikuti kategori yang dipilih.</small></label><label class="span-2 hidden" id="custom-expense-wrap">Nama beban lainnya (opsional)<input id="custom-expense-name" maxlength="100" placeholder="Contoh: sabun cuci"><small>Jika diisi, nama item akan ditambahkan ke master apabila belum tersedia. Memerlukan internet.</small></label>
             <label>Qty<input id="expense-qty" type="number" min="0.01" step="0.01" required placeholder="1" /></label>
             <label>Satuan <span class="optional">opsional</span><input id="expense-unit" type="text" placeholder="kg / pcs / bungkus" /></label>
             <label>Metode Pembayaran<select id="expense-payment" required></select></label>
@@ -95,9 +99,15 @@
 
         <section id="page-history" class="page">
           <div class="section-toolbar history-toolbar"><div><h2>Riwayat Belanja</h2><p>Telusuri transaksi tersimpan dengan filter cepat atau unduh laporan lengkap per bulan.</p></div><div class="history-report-actions"><input id="history-report-month" class="control" type="month" aria-label="Bulan laporan"/><button id="download-monthly-history" class="btn btn-dark" type="button">↓ Download Excel Bulanan</button><button id="export-csv" class="btn btn-ghost" type="button">Export Halaman CSV</button></div></div>
-          <article class="panel"><div class="filter-grid"><input id="history-search" class="control" type="search" placeholder="Cari item atau ID..."/><select id="history-category" class="control"></select><input id="history-date" class="control" type="date"/><button id="history-reset" class="btn btn-ghost btn-filter-clear" type="button" title="Hanya membersihkan filter, tidak menghapus transaksi">Bersihkan Filter</button></div><div class="filter-safety-note"><span>ℹ</span><span><strong>Bersihkan Filter</strong> hanya mengosongkan pencarian dan tanggal. Data transaksi tidak ikut terhapus.</span></div><div class="table-wrap"><table class="history-table"><thead><tr><th>ID</th><th>Tanggal</th><th>Item</th><th>Kategori</th><th>Qty</th><th>Pembayaran</th><th class="right">Total</th><th class="right history-actions-head">Aksi</th></tr></thead><tbody id="history-body"></tbody></table></div><div class="pagination"><button id="history-prev" class="btn btn-ghost">← Sebelumnya</button><span id="history-page-info">Halaman 1</span><button id="history-next" class="btn btn-ghost">Berikutnya →</button></div></article>
+          <article class="panel"><div class="filter-grid"><input id="history-search" class="control" type="search" placeholder="Cari item atau ID..."/><select id="history-category" class="control"></select><input id="history-date" class="control" type="date"/><button id="history-reset" class="btn btn-ghost btn-filter-clear" type="button" title="Hanya membersihkan filter, tidak menghapus transaksi">Bersihkan Filter</button></div><div class="filter-safety-note"><span>ℹ</span><span><strong>Bersihkan Filter</strong> hanya mengosongkan pencarian dan tanggal. Data transaksi tidak ikut terhapus.</span></div><div class="table-wrap"><table class="history-table"><thead><tr><th>No.</th><th>Tgl.</th><th>Item</th><th>Kategori</th><th>Qty</th><th>Bayar</th><th class="right">Total</th><th class="right history-actions-head">Aksi</th></tr></thead><tbody id="history-body"></tbody></table></div><div class="pagination"><button id="history-prev" class="btn btn-ghost">← Sebelumnya</button><span id="history-page-info">Halaman 1</span><button id="history-next" class="btn btn-ghost">Berikutnya →</button></div></article>
         </section>
 
+        <section id="page-report" class="page">
+          <div class="section-toolbar"><div><h2>Laporan Inventory</h2><p>Rekap pengeluaran dan kas per hari atau bulan. Data lama tetap tersimpan.</p></div></div>
+          <article class="panel"><div class="finance-controls"><label>Periode<select id="report-mode"><option value="daily">Harian</option><option value="monthly">Bulanan</option></select></label><label id="report-day-wrap">Tanggal<input id="report-day" type="date" required></label><label id="report-month-wrap" class="hidden">Bulan<input id="report-month" type="month"></label><button id="report-refresh" class="btn btn-dark" type="button">Muat laporan</button><button id="report-export" class="btn btn-ghost" type="button" disabled>Unduh CSV</button><button id="report-print" class="btn btn-ghost" type="button" disabled>Cetak / PDF</button></div><p id="report-status" class="finance-note" role="status">Pilih periode laporan.</p></article>
+          <div id="report-output" aria-live="polite"></div>
+          <article class="panel" id="reconcile-panel"><div class="panel-head"><div><span class="mini-label">TUTUP KAS</span><h3>Pencocokan Saldo</h3><p class="finance-note">Masukkan uang fisik tersisa setelah belanja selesai.</p></div></div><form id="reconcile-form" class="form-grid"><label>Saldo aktual (Rp)<input id="reconcile-actual" type="number" min="0" max="999999999999" step="1" required></label><label>Catatan (opsional)<input id="reconcile-note" maxlength="200" placeholder="Keterangan selisih"></label><div class="span-2 finance-form-actions"><button id="reconcile-save" class="btn btn-primary" disabled type="submit">Simpan Pencocokan</button></div></form></article>
+        </section>
         <section id="page-master" class="page">
           <div class="section-toolbar"><div><h2>Master Data Item</h2><p>Kelola daftar item yang digunakan pada transaksi.</p></div><button id="open-add-item" class="btn btn-primary">＋ Tambah Item</button></div>
           <div id="master-summary" class="mini-kpi-grid"></div>
@@ -106,7 +116,7 @@
       </div>
     </main>
 
-    <nav class="mobile-nav"><button class="active" data-page="dashboard"><span>▦</span><small>Dashboard</small></button><button data-page="input"><span>＋</span><small>Input</small></button><button data-page="history"><span>↺</span><small>Riwayat</small></button><button data-page="master"><span>◇</span><small>Master</small></button></nav>
+    <nav class="mobile-nav"><button class="active" data-page="dashboard"><span>▦</span><small>Dashboard</small></button><button data-page="input"><span>＋</span><small>Input</small></button><button data-page="history"><span>↺</span><small>Riwayat</small></button><button data-page="report"><span>▤</span><small>Laporan</small></button><button data-page="master"><span>◇</span><small>Master</small></button></nav>
   </div>
 
   <dialog id="install-dialog" class="install-dialog"><div class="install-guide-card"><button id="close-install-dialog" class="icon-close install-close" type="button">×</button><img class="install-guide-icon" src="./assets/app-icon.svg" alt="Bakul Sayur" /><span class="mini-label">INSTALL APP</span><h3 id="install-guide-title">Pasang Bakul Sayur</h3><p id="install-guide-copy"></p><ol id="install-guide-steps"></ol><button class="btn btn-primary install-done" type="button" onclick="document.getElementById('install-dialog').close()">Mengerti</button></div></dialog><dialog id="item-dialog"><form id="add-item-form" method="dialog" class="dialog-card"><div class="dialog-head"><div><span class="mini-label">MASTER ITEM</span><h3>Tambah Item Baru</h3></div><button id="close-dialog" type="button" class="icon-close">×</button></div><label>Kategori<select id="new-item-category" required></select></label><label>Nama Item<input id="new-item-name" required maxlength="100" placeholder="Nama item"/></label><label>Satuan Default <span class="optional">opsional</span><input id="new-item-unit" placeholder="kg / pcs / bungkus"/></label><div class="dialog-actions"><button type="button" id="cancel-item" class="btn btn-ghost">Batal</button><button type="submit" class="btn btn-primary">Simpan Item</button></div></form></dialog>
@@ -153,5 +163,6 @@
 
   <script src="./app.js"></script>
   <script src="./monthly.js"></script>
+  <script src="./finance.js"></script>
 </body>
 </html>
