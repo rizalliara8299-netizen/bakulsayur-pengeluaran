@@ -24,7 +24,7 @@ alter table public.bakul_cash_movements enable row level security;
 revoke all on public.bakul_cash_days,public.bakul_cash_movements from public,anon,authenticated;
 grant select,insert,update on public.bakul_cash_days,public.bakul_cash_movements to service_role;
 create or replace function public.bakul_cash_write(p_day date,p_kind text,p_amount bigint,p_note text,p_id uuid,p_expected bigint default null)
-returns jsonb language plpgsql security invoker set search_path = '' as $
+returns jsonb language plpgsql security invoker set search_path = '' as $bakul_cash$
 declare v_expected bigint; v_opening bigint;
 begin
  if p_day is null or p_kind is null or p_kind not in ('opening','actual','addition','transfer_in','transfer_out')
@@ -45,7 +45,8 @@ begin
  insert into public.bakul_cash_movements(id,day,kind,amount,note) values(p_id,p_day,p_kind,p_amount,btrim(p_note)) on conflict(id) do nothing;
  end if;
  return jsonb_build_object('ok',true,'expected',v_expected);
-end $;
+end;
+$bakul_cash$;
 revoke all on function public.bakul_cash_write(date,text,bigint,text,uuid,bigint) from public,anon,authenticated;
 grant execute on function public.bakul_cash_write(date,text,bigint,text,uuid,bigint) to service_role;
 commit;
